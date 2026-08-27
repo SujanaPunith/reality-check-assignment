@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="001-create-player" author="assignment">
+        <createTable tableName="player">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="franchise_id" type="BIGINT"/>
+            <column name="username" type="VARCHAR(64)"/>
+            <column name="email" type="VARCHAR(128)"/>
+            <column name="first_name" type="VARCHAR(64)"/>
+            <column name="last_name" type="VARCHAR(64)"/>
+            <column name="gender" type="VARCHAR(16)"/>
+            <column name="birth_date" type="DATE"/>
+            <column name="country" type="VARCHAR(2)"/>
+            <column name="city" type="VARCHAR(64)"/>
+            <column name="address" type="VARCHAR(128)"/>
+            <column name="postal_code" type="VARCHAR(16)"/>
+            <column name="phone" type="VARCHAR(32)"/>
+            <column name="currency" type="VARCHAR(3)"/>
+            <column name="language" type="VARCHAR(8)"/>
+            <column name="timezone" type="VARCHAR(48)"/>
+            <column name="registered_at" type="VARCHAR(32)"/>
+            <column name="last_login_at" type="VARCHAR(32)"/>
+            <column name="kyc_status" type="VARCHAR(16)"/>
+            <column name="vip_level" type="INT"/>
+            <column name="marketing_opt_in" type="BOOLEAN"/>
+            <column name="self_excluded" type="BOOLEAN"/>
+            <column name="deposit_limit_minor" type="BIGINT"/>
+            <column name="balance_minor" type="BIGINT"/>
+            <column name="bonus_balance_minor" type="BIGINT"/>
+            <column name="loyalty_points" type="BIGINT"/>
+            <column name="affiliate_id" type="VARCHAR(32)"/>
+            <column name="referral_code" type="VARCHAR(32)"/>
+            <column name="risk_score" type="INT"/>
+            <column name="account_status" type="VARCHAR(16)"/>
+            <column name="created_at" type="VARCHAR(32)"/>
+            <column name="updated_at" type="VARCHAR(32)"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="001-create-reality-check-session" author="assignment">
+        <createTable tableName="reality_check_session">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="player_id" type="BIGINT"/>
+            <column name="franchise_id" type="BIGINT"/>
+            <column name="status" type="VARCHAR(16)"/>
+            <column name="interval_minutes" type="INT"/>
+            <column name="started_at" type="BIGINT"/>
+            <column name="last_prompt_at" type="BIGINT"/>
+            <column name="elapsed_seconds" type="BIGINT"/>
+            <column name="net_amount_minor" type="BIGINT"/>
+            <column name="next_check_at" type="BIGINT"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

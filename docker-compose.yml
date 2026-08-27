@@ -1,0 +1,39 @@
+# Infrastructure for the Reality Check service.
+#
+# Only the application is started by default. It uses an in-memory H2 database
+# (MySQL compatibility mode), so no external datastore is required to run it.
+#
+# The compose file is intentionally structured so you can add more services on
+# the shared `reality-check-net` network as part of the assignment (for example
+# a cache or a real database). Uncomment / extend the examples at the bottom.
+
+services:
+  app:
+    build: .
+    image: reality-check-legacy:1.0.0
+    container_name: reality-check-legacy
+    ports:
+      - "8080:8080"
+    networks:
+      - reality-check-net
+    environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75"
+
+  # --- Extension points (add services here as part of the assignment) ---
+  #
+  # redis:
+  #   image: redis:7-alpine
+  #   networks:
+  #     - reality-check-net
+  #
+  # mysql:
+  #   image: mysql:8
+  #   environment:
+  #     MYSQL_DATABASE: realitycheck
+  #     MYSQL_ROOT_PASSWORD: root
+  #   networks:
+  #     - reality-check-net
+
+networks:
+  reality-check-net:
+    driver: bridge

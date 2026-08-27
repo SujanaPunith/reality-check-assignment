@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="002-seed-players" author="assignment">
+        <insert tableName="player">
+            <column name="id" valueNumeric="1001"/>
+            <column name="franchise_id" valueNumeric="10"/>
+            <column name="username" value="erik.andersson"/>
+            <column name="email" value="erik.andersson@example.com"/>
+            <column name="first_name" value="Erik"/>
+            <column name="last_name" value="Andersson"/>
+            <column name="gender" value="M"/>
+            <column name="birth_date" valueDate="1988-04-12"/>
+            <column name="country" value="SE"/>
+            <column name="city" value="Stockholm"/>
+            <column name="address" value="Kungsgatan 1"/>
+            <column name="postal_code" value="11143"/>
+            <column name="phone" value="+46701234567"/>
+            <column name="currency" value="SEK"/>
+            <column name="language" value="sv"/>
+            <column name="timezone" value="Europe/Stockholm"/>
+            <column name="registered_at" value="2021-02-01T10:00:00Z"/>
+            <column name="last_login_at" value="2026-07-01T08:30:00Z"/>
+            <column name="kyc_status" value="VERIFIED"/>
+            <column name="vip_level" valueNumeric="3"/>
+            <column name="marketing_opt_in" valueBoolean="true"/>
+            <column name="self_excluded" valueBoolean="false"/>
+            <column name="deposit_limit_minor" valueNumeric="500000"/>
+            <column name="balance_minor" valueNumeric="125000"/>
+            <column name="bonus_balance_minor" valueNumeric="5000"/>
+            <column name="loyalty_points" valueNumeric="8400"/>
+            <column name="affiliate_id" value="AFF-42"/>
+            <column name="referral_code" value="ERIK2021"/>
+            <column name="risk_score" valueNumeric="17"/>
+            <column name="account_status" value="ACTIVE"/>
+            <column name="created_at" value="2021-02-01T10:00:00Z"/>
+            <column name="updated_at" value="2026-07-01T08:30:00Z"/>
+        </insert>
+        <insert tableName="player">
+            <column name="id" valueNumeric="1002"/>
+            <column name="franchise_id" valueNumeric="10"/>
+            <column name="username" value="anna.nilsson"/>
+            <column name="email" value="anna.nilsson@example.com"/>
+            <column name="first_name" value="Anna"/>
+            <column name="last_name" value="Nilsson"/>
+            <column name="gender" value="F"/>
+            <column name="birth_date" valueDate="1992-09-30"/>
+            <column name="country" value="SE"/>
+            <column name="city" value="Goteborg"/>
+            <column name="address" value="Avenyn 5"/>
+            <column name="postal_code" value="41136"/>
+            <column name="phone" value="+46707654321"/>
+            <column name="currency" value="SEK"/>
+            <column name="language" value="sv"/>
+            <column name="timezone" value="Europe/Stockholm"/>
+            <column name="registered_at" value="2022-06-15T12:00:00Z"/>
+            <column name="last_login_at" value="2026-07-02T19:45:00Z"/>
+            <column name="kyc_status" value="VERIFIED"/>
+            <column name="vip_level" valueNumeric="1"/>
+            <column name="marketing_opt_in" valueBoolean="false"/>
+            <column name="self_excluded" valueBoolean="false"/>
+            <column name="deposit_limit_minor" valueNumeric="200000"/>
+            <column name="balance_minor" valueNumeric="34000"/>
+            <column name="bonus_balance_minor" valueNumeric="0"/>
+            <column name="loyalty_points" valueNumeric="1200"/>
+            <column name="affiliate_id" value="AFF-08"/>
+            <column name="referral_code" value="ANNA2022"/>
+            <column name="risk_score" valueNumeric="25"/>
+            <column name="account_status" value="ACTIVE"/>
+            <column name="created_at" value="2022-06-15T12:00:00Z"/>
+            <column name="updated_at" value="2026-07-02T19:45:00Z"/>
+        </insert>
+        <insert tableName="player">
+            <column name="id" valueNumeric="1003"/>
+            <column name="franchise_id" valueNumeric="20"/>
+            <column name="username" value="johan.berg"/>
+            <column name="email" value="johan.berg@example.com"/>
+            <column name="first_name" value="Johan"/>
+            <column name="last_name" value="Berg"/>
+            <column name="gender" value="M"/>
+            <column name="birth_date" valueDate="1979-01-05"/>
+            <column name="country" value="SE"/>
+            <column name="city" value="Malmo"/>
+            <column name="address" value="Storgatan 9"/>
+            <column name="postal_code" value="21134"/>
+            <column name="phone" value="+46709998877"/>
+            <column name="currency" value="SEK"/>
+            <column name="language" value="en"/>
+            <column name="timezone" value="Europe/Stockholm"/>
+            <column name="registered_at" value="2020-11-20T09:00:00Z"/>
+            <column name="last_login_at" value="2026-06-28T22:10:00Z"/>
+            <column name="kyc_status" value="PENDING"/>
+            <column name="vip_level" valueNumeric="0"/>
+            <column name="marketing_opt_in" valueBoolean="true"/>
+            <column name="self_excluded" valueBoolean="false"/>
+            <column name="deposit_limit_minor" valueNumeric="100000"/>
+            <column name="balance_minor" valueNumeric="9800"/>
+            <column name="bonus_balance_minor" valueNumeric="2500"/>
+            <column name="loyalty_points" valueNumeric="300"/>
+            <column name="affiliate_id" value="AFF-99"/>
+            <column name="referral_code" value="JOHAN2020"/>
+            <column name="risk_score" valueNumeric="48"/>
+            <column name="account_status" value="ACTIVE"/>
+            <column name="created_at" value="2020-11-20T09:00:00Z"/>
+            <column name="updated_at" value="2026-06-28T22:10:00Z"/>
+        </insert>
+    </changeSet>
+
+    <changeSet id="002-seed-sessions" author="assignment">
+        <insert tableName="reality_check_session">
+            <column name="player_id" valueNumeric="1001"/>
+            <column name="franchise_id" valueNumeric="10"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="interval_minutes" valueNumeric="60"/>
+            <column name="started_at" valueNumeric="1751788800"/>
+            <column name="last_prompt_at" valueNumeric="1751788800"/>
+            <column name="elapsed_seconds" valueNumeric="0"/>
+            <column name="net_amount_minor" valueNumeric="-4200"/>
+            <column name="next_check_at" valueNumeric="4102444800"/>
+        </insert>
+        <insert tableName="reality_check_session">
+            <column name="player_id" valueNumeric="1002"/>
+            <column name="franchise_id" valueNumeric="10"/>
+            <column name="status" value="ACTIVE"/>
+            <column name="interval_minutes" valueNumeric="30"/>
+            <column name="started_at" valueNumeric="1751788800"/>
+            <column name="last_prompt_at" valueNumeric="1751788800"/>
+            <column name="elapsed_seconds" valueNumeric="0"/>
+            <column name="net_amount_minor" valueNumeric="15000"/>
+            <column name="next_check_at" valueNumeric="4102444800"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>
