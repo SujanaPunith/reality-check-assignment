@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="005-enforce-one-active-session-per-player" author="assignment">
+        <sql>
+            ALTER TABLE reality_check_session
+            ADD COLUMN active_player_id BIGINT GENERATED ALWAYS AS
+                (CASE WHEN status = 'ACTIVE' THEN player_id ELSE NULL END)
+        </sql>
+
+        <createIndex tableName="reality_check_session"
+                     indexName="uq_reality_check_session_active_player"
+                     unique="true">
+            <column name="active_player_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

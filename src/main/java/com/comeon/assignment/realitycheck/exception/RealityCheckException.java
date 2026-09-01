@@ -1,8 +1,14 @@
 package com.comeon.assignment.realitycheck.exception;
 
-public class RealityCheckException extends Exception {
+import lombok.Getter;
 
-    public RealityCheckException(String message) {
-        super(message);
+@Getter
+public class RealityCheckException extends RuntimeException {
+
+    private final String code;
+
+    public RealityCheckException(String code) {
+        super(code);
+        this.code = code;
     }
 }

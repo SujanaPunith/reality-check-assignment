@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: ${MYSQL_JDBC_URL:jdbc:mysql://localhost:3306/realitycheck}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${MYSQL_USER:realitycheck}
+    password: ${MYSQL_PASSWORD:realitycheck-local}
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+  h2:
+    console:
+      enabled: false

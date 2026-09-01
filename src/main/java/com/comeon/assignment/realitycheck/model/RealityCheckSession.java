@@ -14,4 +14,6 @@ public class RealityCheckSession {
     private long elapsedSeconds;
     private long netAmountMinor;
     private long nextCheckAt;
+    private Long acknowledgedAt;
+
 }

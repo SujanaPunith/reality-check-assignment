@@ -13,7 +13,7 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Reality Check API")
-                        .version("1.0.0")
-                        .description("Reality Check service."));
+                        .version("v1")
+                        .description("API for starting, viewing, updating, stopping, and acknowledging player reality-check sessions."));
     }
 }

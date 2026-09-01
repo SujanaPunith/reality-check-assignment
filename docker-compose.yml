@@ -11,7 +11,6 @@ services:
   app:
     build: .
     image: reality-check-legacy:1.0.0
-    container_name: reality-check-legacy
     ports:
       - "8080:8080"
     networks:
@@ -19,21 +18,64 @@ services:
     environment:
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75"
 
-  # --- Extension points (add services here as part of the assignment) ---
-  #
-  # redis:
-  #   image: redis:7-alpine
-  #   networks:
-  #     - reality-check-net
-  #
-  # mysql:
-  #   image: mysql:8
-  #   environment:
-  #     MYSQL_DATABASE: realitycheck
-  #     MYSQL_ROOT_PASSWORD: root
-  #   networks:
-  #     - reality-check-net
+  app-scale:
+    profiles: ["scale-out"]
+    build: .
+    image: reality-check-legacy:1.0.0
+    networks:
+      - reality-check-net
+    environment:
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75"
+      SPRING_PROFILES_ACTIVE: mysql
+      SPRING_LIQUIBASE_ENABLED: "false"
+      MYSQL_JDBC_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-realitycheck}
+      MYSQL_USER: ${MYSQL_USER:-realitycheck}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-realitycheck-local}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    profiles: ["scale-out"]
+    build:
+      context: .
+      target: migrations
+    image: reality-check-migrations:1.0.0
+    networks:
+      - reality-check-net
+    environment:
+      LIQUIBASE_COMMAND_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-realitycheck}
+      LIQUIBASE_COMMAND_USERNAME: ${MYSQL_USER:-realitycheck}
+      LIQUIBASE_COMMAND_PASSWORD: ${MYSQL_PASSWORD:-realitycheck-local}
+      LIQUIBASE_COMMAND_CHANGELOG_FILE: db/changelog/db.changelog-master.xml
+      LIQUIBASE_SEARCH_PATH: /liquibase/changelog
+    command: ["update"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  mysql:
+    profiles: ["scale-out"]
+    image: mysql:8.4
+    networks:
+      - reality-check-net
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-realitycheck}
+      MYSQL_USER: ${MYSQL_USER:-realitycheck}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-realitycheck-local}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root-local}
+    healthcheck:
+      test: ["CMD-SHELL", "mysql --protocol=TCP -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --database=$${MYSQL_DATABASE} -e 'SELECT 1' --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    volumes:
+      - mysql-data:/var/lib/mysql
 
 networks:
   reality-check-net:
     driver: bridge
+
+volumes:
+  mysql-data:

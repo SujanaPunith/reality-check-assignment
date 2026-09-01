@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="004-create-acknowledgement-history" author="assignment">
+        <createTable tableName="reality_check_acknowledgement">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="session_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="player_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="acknowledged_at" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="reality_check_acknowledgement"
+                                 baseColumnNames="session_id"
+                                 constraintName="fk_acknowledgement_session"
+                                 referencedTableName="reality_check_session"
+                                 referencedColumnNames="id"/>
+
+        <createIndex tableName="reality_check_acknowledgement"
+                     indexName="idx_acknowledgement_session_time">
+            <column name="session_id"/>
+            <column name="acknowledged_at"/>
+        </createIndex>
+
+        <createIndex tableName="reality_check_acknowledgement"
+                     indexName="idx_acknowledgement_player_time">
+            <column name="player_id"/>
+            <column name="acknowledged_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

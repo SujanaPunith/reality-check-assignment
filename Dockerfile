@@ -8,6 +8,11 @@ RUN mvn -B -q dependency:go-offline
 COPY src ./src
 RUN mvn -B -q clean package -DskipTests
 
+# --- One-shot MySQL migration stage ---
+FROM liquibase/liquibase:5.0.3 AS migrations
+RUN lpm add mysql --global
+COPY src/main/resources/db/changelog /liquibase/changelog/db/changelog
+
 # --- Runtime stage (JRE 25) ---
 FROM eclipse-temurin:25-jre
 WORKDIR /app

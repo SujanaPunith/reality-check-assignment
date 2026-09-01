@@ -5,8 +5,10 @@ import com.comeon.assignment.realitycheck.model.RealityCheckSession;
 import lombok.RequiredArgsConstructor;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.Handle;
+import org.jdbi.v3.core.statement.UnableToExecuteStatementException;
 import org.springframework.stereotype.Repository;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,6 +35,10 @@ public class RealityCheckRepository {
                         s.setElapsedSeconds(rs.getLong("elapsed_seconds"));
                         s.setNetAmountMinor(rs.getLong("net_amount_minor"));
                         s.setNextCheckAt(rs.getLong("next_check_at"));
+                        long acknowledgedAt = rs.getLong("acknowledged_at");
+                        if (!rs.wasNull()) {
+                            s.setAcknowledgedAt(acknowledgedAt);
+                        }
                         return s;
                     })
                     .findOne();
@@ -47,15 +53,13 @@ public class RealityCheckRepository {
         }
     }
 
-    public void insertSession(RealityCheckSession s) {
-        Handle handle = null;
-        try {
-            handle = jdbi.open();
+    public boolean insertSession(RealityCheckSession s) {
+        try (Handle handle = jdbi.open()) {
             handle.createUpdate("INSERT INTO reality_check_session " +
                             "(player_id, franchise_id, status, interval_minutes, started_at, last_prompt_at, " +
-                            " elapsed_seconds, net_amount_minor, next_check_at) " +
+                            " elapsed_seconds, net_amount_minor, next_check_at, acknowledged_at) " +
                             "VALUES (:playerId, :franchiseId, :status, :intervalMinutes, :startedAt, :lastPromptAt, " +
-                            " :elapsedSeconds, :netAmountMinor, :nextCheckAt)")
+                            " :elapsedSeconds, :netAmountMinor, :nextCheckAt, :acknowledgedAt)")
                     .bind("playerId", s.getPlayerId())
                     .bind("franchiseId", s.getFranchiseId())
                     .bind("status", s.getStatus())
@@ -65,26 +69,170 @@ public class RealityCheckRepository {
                     .bind("elapsedSeconds", s.getElapsedSeconds())
                     .bind("netAmountMinor", s.getNetAmountMinor())
                     .bind("nextCheckAt", s.getNextCheckAt())
-                    .execute();
-        } finally {
-            handle.close();
+                    .bind("acknowledgedAt", s.getAcknowledgedAt())
+                    .executeAndReturnGeneratedKeys("id")
+                    .mapTo(Long.class)
+                    .findOne()
+                    .ifPresent(s::setId);
+            return true;
+        } catch (UnableToExecuteStatementException exception) {
+            if (isActiveSessionUniqueViolation(exception)) {
+                return false;
+            }
+            throw exception;
         }
     }
 
-    public void updateSession(RealityCheckSession s) {
-        jdbi.open().createUpdate("UPDATE reality_check_session SET status = :status, interval_minutes = :intervalMinutes, " +
-                        "last_prompt_at = :lastPromptAt, elapsed_seconds = :elapsedSeconds, " +
-                        "net_amount_minor = :netAmountMinor, next_check_at = :nextCheckAt " +
-                        "WHERE id = :id")
-                .bind("status", s.getStatus())
-                .bind("intervalMinutes", s.getIntervalMinutes())
-                .bind("lastPromptAt", s.getLastPromptAt())
-                .bind("elapsedSeconds", s.getElapsedSeconds())
-                .bind("netAmountMinor", s.getNetAmountMinor())
-                .bind("nextCheckAt", s.getNextCheckAt())
-                .bind("id", s.getId())
+    private boolean isActiveSessionUniqueViolation(Throwable throwable) {
+        if (hasSqlState(throwable, "23505")) {
+            return true;
+        }
+        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sqlException
+                    && "23000".equals(sqlException.getSQLState())
+                    && sqlException.getErrorCode() == 1062
+                    && sqlException.getMessage().contains("uq_reality_check_session_active_player")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasSqlState(Throwable throwable, String sqlState) {
+        for (Throwable cause = throwable; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sqlException && sqlState.equals(sqlException.getSQLState())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean updateInterval(RealityCheckSession session) {
+        try (Handle handle = jdbi.open()) {
+            return handle.createUpdate("""
+                    UPDATE reality_check_session
+                    SET interval_minutes = :intervalMinutes,
+                        elapsed_seconds = :elapsedSeconds,
+                        next_check_at = :nextCheckAt
+                    WHERE id = :id
+                      AND status = 'ACTIVE'
+                    """)
+                    .bind("intervalMinutes", session.getIntervalMinutes())
+                    .bind("elapsedSeconds", session.getElapsedSeconds())
+                    .bind("nextCheckAt", session.getNextCheckAt())
+                    .bind("id", session.getId())
+                    .execute() == 1;
+        }
+    }
+
+    public boolean stopSession(RealityCheckSession session) {
+        try (Handle handle = jdbi.open()) {
+            return handle.createUpdate("""
+                    UPDATE reality_check_session
+                    SET status = 'STOPPED',
+                        elapsed_seconds = :elapsedSeconds
+                    WHERE id = :id
+                      AND status = 'ACTIVE'
+                    """)
+                    .bind("elapsedSeconds", session.getElapsedSeconds())
+                    .bind("id", session.getId())
+                    .execute() == 1;
+        }
+    }
+
+    public boolean recordAcknowledgement(RealityCheckSession session) {
+        return jdbi.inTransaction(handle -> {
+            if (!updateAcknowledgedAt(handle, session)) {
+                return false;
+            }
+
+            insertAcknowledgement(
+                    handle,
+                    session.getId(),
+                    session.getPlayerId(),
+                    session.getAcknowledgedAt());
+            return true;
+        });
+    }
+
+    public boolean claimDueSession(RealityCheckSession session, long now) {
+        long elapsedSeconds = now - session.getStartedAt();
+        long nextCheckAt = now + (long) session.getIntervalMinutes() * 60;
+
+        try (Handle handle = jdbi.open()) {
+            boolean claimed = handle.createUpdate("""
+                    UPDATE reality_check_session
+                    SET elapsed_seconds = :elapsedSeconds,
+                        last_prompt_at = :lastPromptAt,
+                        next_check_at = :nextCheckAt
+                    WHERE id = :id
+                      AND status = 'ACTIVE'
+                      AND next_check_at <= :now
+                      AND interval_minutes = :intervalMinutes
+                    """)
+                    .bind("elapsedSeconds", elapsedSeconds)
+                    .bind("lastPromptAt", now)
+                    .bind("nextCheckAt", nextCheckAt)
+                    .bind("id", session.getId())
+                    .bind("now", now)
+                    .bind("intervalMinutes", session.getIntervalMinutes())
+                    .execute() == 1;
+
+            if (claimed) {
+                session.setElapsedSeconds(elapsedSeconds);
+                session.setLastPromptAt(now);
+                session.setNextCheckAt(nextCheckAt);
+            }
+            return claimed;
+        }
+    }
+
+    public void updateElapsedSecondsForNonDueActiveSession(long sessionId, long now) {
+        try (Handle handle = jdbi.open()) {
+            handle.createUpdate("""
+                    UPDATE reality_check_session
+                    SET elapsed_seconds = :now - started_at
+                    WHERE id = :id
+                      AND status = 'ACTIVE'
+                      AND next_check_at > :now
+                    """)
+                    .bind("id", sessionId)
+                    .bind("now", now)
+                    .execute();
+        }
+    }
+
+    private boolean updateAcknowledgedAt(Handle handle, RealityCheckSession session) {
+        return handle.createUpdate("""
+            UPDATE reality_check_session
+            SET acknowledged_at = CASE
+                    WHEN acknowledged_at IS NULL OR acknowledged_at < :acknowledgedAt
+                    THEN :acknowledgedAt
+                    ELSE acknowledged_at
+                END
+            WHERE id = :id
+              AND status = 'ACTIVE'
+            """)
+                .bind("acknowledgedAt", session.getAcknowledgedAt())
+                .bind("id", session.getId())
+                .execute() == 1;
+    }
+
+    private void insertAcknowledgement(
+            Handle handle,
+            long sessionId,
+            long playerId,
+            long acknowledgedAt) {
+        handle.createUpdate("""
+                INSERT INTO reality_check_acknowledgement (session_id, player_id, acknowledged_at)
+                VALUES (:sessionId, :playerId, :acknowledgedAt)
+                """)
+                .bind("sessionId", sessionId)
+                .bind("playerId", playerId)
+                .bind("acknowledgedAt", acknowledgedAt)
                 .execute();
     }
+
 
     public PlayerRecord findPlayerFull(long playerId) {
         try (Handle handle = jdbi.open()) {
